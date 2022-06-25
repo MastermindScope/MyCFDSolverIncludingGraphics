@@ -42,10 +42,10 @@ void glfwHandler::drawFromArray(triangle* readArray, int size) {
     if (scalingDone == 0) {
         scale(readArray, size);
         scalingDone = 1;
-        std::cout << "normalized" << std::endl;
+        //std::cout << "normalized" << std::endl;
     }
     //std::cout << std::endl << readArray[0].V1[0] << std::endl << std::endl;
-
+    sortEntries(readArray, size);
 
     for (int k = 0; k < size; k++) {
         drawTriangle(readArray[k].V1[0], readArray[k].V1[1], readArray[k].V2[0]
@@ -147,5 +147,34 @@ BaseClass::triangle* glfwHandler::rotate(triangle* readArray, int size, float xr
 
 
 void glfwHandler::sortEntries(triangle* readArray, int size) {
+
+    //insertion sort algorithm
+    for (int j = 1; j < size; j++) {
+        float key[12] = {   readArray[j].V1[0], readArray[j].V1[1], readArray[j].V1[2],
+                            readArray[j].V2[0], readArray[j].V1[1], readArray[j].V1[2], 
+                            readArray[j].V3[0], readArray[j].V1[1], readArray[j].V1[2], 
+                            readArray[j].normal[0], readArray[j].normal[1], readArray[j].normal[2] };
+        int i = j - 1;
+
+        while (i >= 0 && readArray[i].V1[2] > key[2]) {
+            for (int k = 0; k < 3; k++) {
+                readArray[i + 1].V1[k] = readArray[i].V1[k];
+                readArray[i + 1].V2[k] = readArray[i].V2[k];
+                readArray[i + 1].V3[k] = readArray[i].V3[k];
+                readArray[i + 1].normal[k] = readArray[i].normal[k];
+            }
+            i -= 1;
+        }
+        //readArray[i + 1].V1[2] = key;
+
+        for (int k = 0; k < 3; k++) {
+            readArray[i + 1].V1[k] = key[k];
+            readArray[i + 1].V2[k] = key[k + 3];
+            readArray[i + 1].V3[k] = key[k + 6];
+            readArray[i + 1].normal[k] = key[k + 9];
+        }
+    }
+
+
 
 }

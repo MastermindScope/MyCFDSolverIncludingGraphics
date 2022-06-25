@@ -88,7 +88,7 @@ int main(void)
 {
     GLFWwindow* mainWindow = nullptr;
     const char* description;
-    FileReader reader("C:\\Users\\Public\\wirbelKammer.stl");
+    FileReader reader("C:\\Users\\Public\\heart.stl");
     glfwHandler handler;
     giveOver uebergabe;
 
