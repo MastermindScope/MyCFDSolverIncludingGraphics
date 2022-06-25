@@ -5,13 +5,14 @@
 //
 //
 //
-
+#define _USE_MATH_DEFINES
 
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include "glfwHandler.h"
 #include "FileReader.h"
 #include "CoordinateTransformer.h"
+#include <cmath>
 
 
 struct giveOver
@@ -24,32 +25,70 @@ struct giveOver
  void scrollCallback(GLFWwindow* window, double xoff, double yoff) {
     int sign = yoff / abs(yoff);
     glfwHandler callbackHandler = *(glfwHandler*)(glfwGetWindowUserPointer(window));
-
-
-
-    /*Working Shit
-    FileReader* boundSTL = (FileReader*)(glfwGetWindowUserPointer(window));
-
-
-    std::cout << pow(1.1F, sign) << std::endl;
-
-
-    boundSTL->coordinates = callbackHandler.scale(boundSTL->coordinates, boundSTL->storageSize, 0, pow(1.01, sign));
     
+    FileReader* boundSTL = (*(giveOver*)(glfwGetWindowUserPointer(window))).reader;
 
-    */
-    
-    
-
+    boundSTL->coordinates = callbackHandler.scale(boundSTL->coordinates, boundSTL->storageSize, 0, pow(1.1, sign));
 
 }
+
+ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+     glfwHandler callbackHandler = (*(giveOver*)(glfwGetWindowUserPointer(window))).handler;
+
+     if (button == GLFW_MOUSE_BUTTON_1 && action == GLFW_PRESS) {
+         callbackHandler.LMBDown = 1;
+     }
+     else if (button == GLFW_MOUSE_BUTTON_1 && action == GLFW_RELEASE) {
+         callbackHandler.LMBDown = 0;
+     }
+
+     std::cout << callbackHandler.LMBDown << std::endl;
+ }
+
+ void cursorPositionCallback(GLFWwindow* window, double xpos, double ypos) {
+     glfwHandler callbackHandler = (*(giveOver*)(glfwGetWindowUserPointer(window))).handler;
+     FileReader* boundSTL = (*(giveOver*)(glfwGetWindowUserPointer(window))).reader;
+
+     int width, height;
+
+     glfwGetWindowSize(window, &width, &height);
+     
+     
+     int LMB = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
+     int RMB = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
+
+     //shifting the STL
+     if (LMB == GLFW_PRESS) {
+         float xshift = (xpos - callbackHandler.xprevious) / width;
+         float yshift = (ypos - callbackHandler.yprevious) / height;
+         callbackHandler.shift(boundSTL->coordinates, boundSTL->storageSize, xshift, -yshift);
+     }
+
+     
+
+     //rotatinng the STL
+
+     if (RMB == GLFW_PRESS) {
+         float xangle = (xpos - callbackHandler.xprevious) / width * M_PI;
+         float yangle = (ypos - callbackHandler.yprevious) / height * M_PI;
+
+         callbackHandler.rotate(boundSTL->coordinates, boundSTL->storageSize, yangle, xangle);
+
+     }
+
+
+
+
+     (*(giveOver*)(glfwGetWindowUserPointer(window))).handler.xprevious = xpos;
+     (*(giveOver*)(glfwGetWindowUserPointer(window))).handler.yprevious = ypos;
+ }
 
 
 int main(void)
 {
     GLFWwindow* mainWindow = nullptr;
     const char* description;
-    FileReader reader("C:\\Users\\Public\\heart.stl");
+    FileReader reader("C:\\Users\\Public\\wirbelKammer.stl");
     glfwHandler handler;
     giveOver uebergabe;
 
@@ -59,15 +98,6 @@ int main(void)
     uebergabe.reader = &reader;
 
 
-    FileReader* boundSTL = &reader; //using this for scroll scaling
-    
-    //BaseClass* boundPair[2] = {&handler, &reader}; //using this for clicking and dragging, glfw needs to know that MB is clicked
-                                                  //but the callbackFun also needs the coordinates
-
-    uintptr_t boundPair[2] = {(uintptr_t)&handler, (uintptr_t)&reader};
-
-    glfwHandler* bindToWindow = &handler;
-
     handler.setScalingDone();
     
 
@@ -76,13 +106,16 @@ int main(void)
         return -1;
     }
 
-    glfwSetWindowUserPointer(handler.handlerWindow, bindToWindow); //just give it boundSTL for shit to work
-    std::cout << boundSTL << std::endl;
-    std::cout << glfwGetWindowUserPointer(handler.handlerWindow) << std::endl;
+    glfwSetWindowUserPointer(handler.handlerWindow, &uebergabe);
 
 
 
     glfwSetScrollCallback(handler.handlerWindow, &scrollCallback);
+    glfwSetMouseButtonCallback(handler.handlerWindow, &mouseButtonCallback);
+    glfwSetCursorPosCallback(handler.handlerWindow, &cursorPositionCallback);
+
+
+
     handler.scale(reader.coordinates, reader.storageSize);
 
     /* Loop until the user closes the window */
@@ -91,8 +124,6 @@ int main(void)
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
 
-
-        std::cout << reader.coordinates[0].V1[0] << std::endl;
 
         handler.drawFromArray(reader.coordinates, reader.storageSize);
         
